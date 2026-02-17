@@ -1,0 +1,106 @@
+body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    font-family: var(--font-family);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    user-select: none;
+    /* 禁止全域反白 */
+}
+
+input,
+textarea {
+    user-select: text;
+    /* 確保輸入框可選取文字 */
+}
+
+#root {
+    display: flex;
+    height: 100%;
+    width: 100%;
+}
+
+.app-container {
+    display: flex;
+    width: 100%;
+    overflow: hidden;
+    height: 100vh;
+    animation: fadeInApp 0.5s ease-out;
+}
+
+/* 進入動畫 */
+.app-container.entering-transition {
+    animation: zoomOutExit 0.8s cubic-bezier(0.7, 0, 0.3, 1) forwards;
+}
+
+@keyframes zoomOutExit {
+    0% {
+        transform: scale(1);
+        filter: blur(0);
+    }
+
+    100% {
+        transform: scale(1.5);
+        filter: blur(20px);
+        opacity: 0;
+    }
+}
+
+@keyframes fadeInApp {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.sidebar {
+    width: 260px;
+    background-color: var(--sidebar-bg);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    transition: width 0.3s ease;
+}
+
+.main-chat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--chat-bg);
+    position: relative;
+}
+
+.empty-state {
+    text-align: center;
+    margin-top: 100px;
+    color: var(--text-secondary);
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+
+/* Global Theme Transition */
+* {
+    transition: background-color 0.3s ease, color 0.1s ease, border-color 0.3s ease;
+}

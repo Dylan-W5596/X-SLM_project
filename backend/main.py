@@ -58,21 +58,21 @@ app = FastAPI(title="Llama Electron API", lifespan=lifespan)
 # 啟用 Electron 的 CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"], # 准許所有來源
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"], # 准許所有動作 (GET, POST, DELETE...)
+    allow_headers=["*"], # 准許所有表頭 (Content-Type 等)
 )
 
 # 初始化 AI 引擎 (延遲載入)
 model_engine = ModelEngine()
 
-# Pydantic 模型
+# Pydantic 資料驗證
 class GroupCreate(BaseModel):
     name: str = "未分類"
 
 class GroupUpdate(BaseModel):
-    name: Optional[str] = None
+    name: Optional[str] = None # Optional表可有可無
     order: Optional[int] = None
 
 class CreateSession(BaseModel):
@@ -86,7 +86,7 @@ class SessionMove(BaseModel):
 class CreateMessage(BaseModel):
     session_id: int
     content: str
-    role: str = "user"
+    role: str = "user" # 預設為 user
 
 class ChatResponse(BaseModel):
     role: str
@@ -218,6 +218,19 @@ def chat(message: CreateMessage, db: Session = Depends(get_db)):
     db.commit()
     
     return {"role": "assistant", "content": response_text}
+
+@app.post("/switch_model")
+def switch_model(data: dict):
+    model_id = data.get("model_id")
+    print(model_id)
+    if not model_id:
+        raise HTTPException(status_code=400, detail="Model ID is required")
+    
+    try:
+        model_engine.switch_model(model_id)
+        return {"status": "success", "current_model": model_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/chat/stream")
 def chat_stream():

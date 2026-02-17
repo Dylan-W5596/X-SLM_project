@@ -5,7 +5,7 @@ const http = require('http');
 
 let mainWindow;
 let monitorWindow;
-let backendProcess;
+let backendProcess; //全域變數, 防止重複執行
 
 const BACKEND_PORT = 8000;
 const BACKEND_URL = `http://127.0.0.1:${BACKEND_PORT}`;
@@ -33,11 +33,22 @@ function createWindow() {
         mainWindow.loadURL('http://localhost:5173');
         mainWindow.webContents.openDevTools();
     } else {
-        mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+        mainWindow.loadFile(path.join(__dirname, '../index.html'));
     }
 
     mainWindow.once('ready-to-show', () => {
         mainWindow.show();
+    });
+
+    // 資源優化：視窗焦點監聽
+    mainWindow.on('focus', () => {
+        mainWindow.webContents.send('app-focus-changed', true);
+        // 若在 Windows 系統，可以在此將後端優先級調回正常
+        // 目前暫時不強制調整優先級以避免權限問題，先以暫停前端動畫為主
+    });
+
+    mainWindow.on('blur', () => {
+        mainWindow.webContents.send('app-focus-changed', false);
     });
 
     mainWindow.on('closed', () => {
@@ -120,7 +131,7 @@ ipcMain.on('open-monitor', () => {
     monitorWindow = new BrowserWindow({
         width: 800,
         height: 600,
-        title: 'Llama Backend Monitor',
+        title: 'Backend Monitor',
         backgroundColor: '#000000',
         webPreferences: {
             nodeIntegration: true,

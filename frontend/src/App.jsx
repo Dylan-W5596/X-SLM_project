@@ -4,9 +4,14 @@ import Sidebar from './components/Sidebar';
 import ChatMessage from './components/ChatMessage';
 import ChatInput from './components/ChatInput';
 import Settings from './components/Settings';
+import Home from './components/Home';
+import Credits from './components/Credits';
 import { playSound } from './utils/soundUtils';
 import { languages } from './translations/languages';
 import assistantAvatar from './assets/icons/IM742001_account_circle_24dp.png';
+import './styles/theme_variables.css';
+import './styles/base.css';
+import './styles/Chat.css';
 
 const { ipcRenderer } = (window.require && window.require('electron')) || { ipcRenderer: null };
 
@@ -18,9 +23,14 @@ function App() {
   const [groups, setGroups] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [view, setView] = useState('chat'); // 'chat' or 'settings'
+  const [view, setView] = useState('home'); // 'home', 'chat', or 'settings'
+  const [hasSeenEntryAnim, setHasSeenEntryAnim] = useState(false);
+  const [isEnteringChat, setIsEnteringChat] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
-  const abortControllerRef = useRef(null);
+  const [selectedModel, setSelectedModel] = useState('Llama_3.2_1B_It_Q8_0'); // 預設 llama
+  const [isModelLoading, setIsModelLoading] = useState(false); // Model是否Loading
+  const abortControllerRef = useRef(null); // 中止機制
+  const messagesEndRef = useRef(null);
   const [config, setConfig] = useState(() => {
     const saved = localStorage.getItem('llama_config');
     return saved ? JSON.parse(saved) : {
@@ -28,18 +38,20 @@ function App() {
       temperature: 0.7,
       maxTokens: 512,
       soundEnabled: true,
-      language: 'zh',
+      language: 'en',
     };
   });
-  const messagesEndRef = useRef(null);
 
-  // 持久化設定
+  //取得當前語系
+  const t = languages[config.language] || languages.zh;
+
+  // 存檔設定  * useEffect用法為副作用
   useEffect(() => {
     localStorage.setItem('llama_config', JSON.stringify(config));
     document.body.dataset.theme = config.theme;
-  }, [config]);
+  }, [config]); //* 1.無陣列表每次渲染執行 2.空陣列表只在最初執行一次 3.有陣列表陣列有變化值執行
 
-  // 初始化
+  // 初始化, 抓取數據
   useEffect(() => {
     const init = async () => {
       try {
@@ -59,11 +71,12 @@ function App() {
     init();
   }, []);
 
-  // 捲動到底部
+  // 自動捲動
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // 更新數據
   const fetchData = async () => {
     try {
       const [gs, ss] = await Promise.all([api.getGroups(), api.getSessions()]);
@@ -74,6 +87,7 @@ function App() {
     }
   };
 
+  //新增聊天室
   const handleNewChat = async (groupId = null) => {
     playSound('click', config.soundEnabled);
     try {
@@ -87,6 +101,7 @@ function App() {
     }
   };
 
+  //載入聊天室
   const handleLoadSession = async (id) => {
     playSound('click', config.soundEnabled);
     try {
@@ -99,6 +114,7 @@ function App() {
     }
   };
 
+  //刪除聊天室
   const handleDeleteSession = async (id) => {
     if (!window.confirm('確定要刪除此對話紀錄嗎？')) return;
     playSound('click', config.soundEnabled);
@@ -127,6 +143,7 @@ function App() {
     }
   };
 
+  //重新命名聊天室
   const handleRenameSession = async (id, newTitle) => {
     const targetTitle = newTitle.trim();
     if (!targetTitle || targetTitle === sessions.find(s => s.id === id)?.title) return;
@@ -140,6 +157,7 @@ function App() {
     }
   };
 
+  //新增聊天群組
   const handleNewGroup = async () => {
     playSound('click', config.soundEnabled);
     try {
@@ -152,6 +170,7 @@ function App() {
     }
   };
 
+  //重新命名聊天群組
   const handleRenameGroup = async (id, newName) => {
     try {
       await api.updateGroup(id, { name: newName });
@@ -163,6 +182,7 @@ function App() {
     }
   };
 
+  //刪除聊天群組
   const handleDeleteGroup = async (id) => {
     if (!window.confirm('確定要刪除此群組嗎？(會話會轉為未分類)')) return;
     playSound('click', config.soundEnabled);
@@ -176,6 +196,7 @@ function App() {
     }
   };
 
+  //移動聊天室
   const handleMoveSession = async (sessionId, targetGroupId, targetSessionId, position) => {
     // 簡單排序策略：
     // 如果是移到群組頭，order = 0
@@ -224,6 +245,7 @@ function App() {
     }
   };
 
+  //停止AI生成訊息
   const handleStopGeneration = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -235,19 +257,19 @@ function App() {
     }
   };
 
+  //複製AI生成訊息
   const handleCopyMessage = (content) => {
     navigator.clipboard.writeText(content).then(() => {
-      // 可以在這裡添加一個簡單的提示或音效
       playSound('success', config.soundEnabled);
     });
   };
 
+  //回覆AI生成訊息
   const handleReplyMessage = (content) => {
     setReplyingTo(content);
   };
 
-  const t = languages[config.language] || languages.zh;
-
+  //開啟後台監管
   const handleOpenMonitor = () => {
     if (ipcRenderer) {
       ipcRenderer.send('open-monitor');
@@ -256,81 +278,133 @@ function App() {
     }
   };
 
+  //切換畫面函數
+  const handleNavigate = (target) => {
+    playSound('click', config.soundEnabled);
+    if (target === 'chat' && view === 'home' && !hasSeenEntryAnim) {
+      setIsEnteringChat(true);
+      setHasSeenEntryAnim(true);
+      setTimeout(() => {
+        setView('chat');
+        setIsEnteringChat(false);
+      }, 800); // 第一次點入時的動畫設定
+    } else {
+      setView(target);
+    }
+  };
+
+  //切換語言模型
+  const handleModelChange = async (modelId) => {
+    if (modelId === selectedModel) return;
+
+    setIsModelLoading(true);
+    setSelectedModel(modelId);
+
+    try {
+      await api.switchModel(modelId);
+      playSound('success', config.soundEnabled);
+    } catch (e) {
+      console.error("切換失敗，請檢查後端控制台", e);
+      playSound('error', config.soundEnabled);
+    } finally {
+      setIsModelLoading(false); //把Loading取消
+    }
+  };
+
+
   return (
-    <div className="app-container">
-      <Sidebar
-        groups={groups}
-        sessions={sessions}
-        sessionId={sessionId}
-        sidebarOpen={sidebarOpen}
-        onNewChat={handleNewChat}
-        onLoadSession={(id) => { setView('chat'); handleLoadSession(id); }}
-        onDeleteSession={handleDeleteSession}
-        onRenameSession={handleRenameSession}
-        onNewGroup={handleNewGroup}
-        onRenameGroup={handleRenameGroup}
-        onDeleteGroup={handleDeleteGroup}
-        onMoveSession={handleMoveSession}
-        onOpenSettings={() => { playSound('click', config.soundEnabled); setView('settings'); }}
-        activeView={view}
-        onPlayClick={(force = false) => playSound('click', force || config.soundEnabled)}
-        t={t}
-      />
+    <div className={`app-container ${isEnteringChat ? 'entering-transition' : ''}`}>
 
-      <div className="main-chat">
-        {view === 'chat' ? (
-          <>
-            <div className="messages-container">
-              {messages.length === 0 && (
-                <div className="empty-state">
-                  <h2>Llama 3.2 1B (本地端)</h2>
-                  <p>Powered by Electron + FastAPI + CUDA</p>
-                </div>
-              )}
-
-              {messages.map((msg, idx) => (
-                <ChatMessage
-                  key={idx}
-                  msg={msg}
-                  onCopy={handleCopyMessage}
-                  onReply={handleReplyMessage}
-                  t={t}
-                />
-              ))}
-
-              {isLoading && (
-                <div className="message assistant">
-                  <div className="avatar">
-                    <img src={assistantAvatar} alt="AI" className="avatar-img" />
-                  </div>
-                  <div className="message-content">...</div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-
-            <ChatInput
-              input={input}
-              setInput={setInput}
-              replyingTo={replyingTo}
-              onCancelReply={() => setReplyingTo(null)}
-              onSendMessage={handleSendMessage}
-              onStopGeneration={handleStopGeneration}
-              isLoading={isLoading}
-              t={t}
-            />
-          </>
-        ) : (
-          <Settings
-            config={config}
-            onUpdateConfig={setConfig}
-            onBack={() => { playSound('click', config.soundEnabled); setView('chat'); }}
+      {/* 當畫面為主頁面時 */}
+      {view === 'home' ? (
+        <Home onNavigate={handleNavigate} t={t} />
+      ) : view === 'credits' ? (
+        <Credits onBack={() => handleNavigate('home')} t={t} />
+      ) : (
+        <>
+          <Sidebar
+            groups={groups}
+            sessions={sessions}
+            sessionId={sessionId}
+            sidebarOpen={sidebarOpen}
+            onNewChat={handleNewChat}
+            onLoadSession={(id) => { handleNavigate('chat'); handleLoadSession(id); }}
+            onDeleteSession={handleDeleteSession}
+            onRenameSession={handleRenameSession}
+            onNewGroup={handleNewGroup}
+            onRenameGroup={handleRenameGroup}
+            onDeleteGroup={handleDeleteGroup}
+            onMoveSession={handleMoveSession}
+            onOpenSettings={() => { handleNavigate('settings'); }}
+            onGoHome={() => { handleNavigate('home'); }}
+            activeView={view}
             onPlayClick={(force = false) => playSound('click', force || config.soundEnabled)}
-            onOpenMonitor={() => { playSound('click', config.soundEnabled); handleOpenMonitor(); }}
             t={t}
           />
-        )}
-      </div>
+
+          {/* 當畫面為聊天時 */}
+          <div className="main-chat">
+            {view === 'chat' && (
+              <>
+                <div className="messages-container">
+                  {messages.length === 0 && (
+                    <div className="empty-state">
+                      <h2>X LLM</h2>
+                      <p>Powered by X_OO</p>
+                    </div>
+                  )}
+
+                  {messages.map((msg, idx) => (
+                    <ChatMessage
+                      key={idx}
+                      msg={msg}
+                      onCopy={handleCopyMessage}
+                      onReply={handleReplyMessage}
+                      t={t}
+                    />
+                  ))}
+
+                  {isLoading && (
+                    <div className="message assistant loading">
+                      <div className="avatar">
+                        <img src={assistantAvatar} alt="AI" className="avatar-img" />
+                      </div>
+                      <div className="message-content">...</div>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                <ChatInput
+                  input={input}
+                  setInput={setInput}
+                  replyingTo={replyingTo}
+                  onCancelReply={() => setReplyingTo(null)}
+                  onSendMessage={handleSendMessage}
+                  onStopGeneration={handleStopGeneration}
+                  isLoading={isLoading}
+                  t={t}
+                />
+              </>
+            )}
+
+            {/* 當畫面為設定時 */}
+            {view === 'settings' && (
+              <Settings
+                config={config}
+                onUpdateConfig={setConfig}
+                onBack={() => { handleNavigate('chat'); }}
+                onPlayClick={(force = false) => playSound('click', force || config.soundEnabled)}
+                onOpenMonitor={() => { playSound('click', config.soundEnabled); handleOpenMonitor(); }}
+                selectedModel={selectedModel}
+                isModelLoading={isModelLoading}
+                onModelChange={handleModelChange}
+                t={t}
+              />
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -90,5 +90,15 @@ export const api = {
         });
         if (!res.ok) throw new Error('發送訊息失敗');
         return res.json();
+    },
+
+    async switchModel(modelId) {
+        const res = await fetch(`${BACKEND_URL}/switch_model`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model_id: modelId })
+        });
+        if (!res.ok) throw new Error('切換模型失敗');
+        return res.json();
     }
 };

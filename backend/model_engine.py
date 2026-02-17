@@ -16,55 +16,61 @@ custom_theme = Theme({
 # 強制使用 UTF-8 輸出以減少 Windows 編碼報錯，雖然仍受限於終端機能否顯示
 console = Console(theme=custom_theme, force_terminal=True, legacy_windows=None)
 
-# 模型的全域路徑
-MODEL_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "models", "Llama-3.2-1B-Instruct-Q8_0.gguf"))
+# 取得 models 資料夾的絕對路徑
+MODELS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "models"))
+
+# [提前載入 CUDA DLL] 放在任何 import llama_cpp 之前
+if sys.platform == "win32":
+    cuda_paths = [
+        r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.0\bin",
+        r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.1\bin",
+        r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.4\bin",
+        r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\bin",
+        os.path.expanduser(r"~\.lmstudio\extensions\backends\vendor\win-llama-cuda12-vendor-v2")
+    ]
+    for path in cuda_paths:
+        if os.path.exists(path):
+            try:
+                os.add_dll_directory(path)
+            except Exception:
+                pass
+
+models_path = {
+    "Gemma3_4b_it_Q4_K_M": os.path.join(MODELS_DIR, "Gemma3_4b_it_Q4_K_M.gguf"),
+    "Llama_3.2_1B_It_Q8_0": os.path.join(MODELS_DIR, "Llama_3.2_1B_It_Q8_0.gguf")
+}
+DEFULT_MODEL_PATH = models_path["Llama_3.2_1B_It_Q8_0"]
 
 class ModelEngine:
     def __init__(self):
         self.llm = None
         self.has_gpu = False
+        self.current_use_model_path = DEFULT_MODEL_PATH # 預設模型路徑
         
-    def load_model(self):
+    def load_model(self, use_model_path=None):
         if self.llm:
             return
 
-        console.print(Panel(f"正在載入模型，位置: [bold yellow]{MODEL_PATH}[/bold yellow]", title="[bold blue]AI 引擎初始化[/bold blue]", border_style="blue"))
+        # 沒傳路徑則使用目前設定的路徑
+        target_path = use_model_path if use_model_path else self.current_use_model_path
+
+        console.print(Panel(f"正在載入模型，位置: [bold yellow]{target_path}[/bold yellow]", title="[bold blue]AI 引擎初始化[/bold blue]", border_style="blue"))
         
-        if not os.path.exists(MODEL_PATH):
-            console.print("[danger]找不到模型檔案！請先下載模型。[/danger]")
-            raise FileNotFoundError(f"在 {MODEL_PATH} 找不到模型")
+        if not target_path or not os.path.exists(target_path):
+            console.print(f"[danger]找不到模型檔案！ 路徑: {target_path}[/danger]")
+            raise FileNotFoundError(f"在 {target_path} 找不到模型")
 
         try:
-            # 顯式添加 CUDA DLL 搜尋路徑 (針對 Windows 且 Python 3.8+)
-            if sys.platform == "win32":
-                cuda_paths = [
-                    r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.1\bin",
-                    r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.0\bin",
-                    r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.4\bin",
-                    r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\bin",
-                    # 嘗試包含 LM Studio 攜帶的程式庫
-                    os.path.expanduser(r"~\.lmstudio\extensions\backends\vendor\win-llama-cuda12-vendor-v2")
-                ]
-                for path in cuda_paths:
-                    if os.path.exists(path):
-                        console.print(f"[info]正在將 DLL 目錄加入搜尋路徑: {path}[/info]")
-                        try:
-                            # 即使目錄不存在也會報錯，我們已經檢查過 exists
-                            os.add_dll_directory(path)
-                        except Exception as e:
-                            console.print(f"[warning]無法加入目錄 {path}: {e}[/warning]")
-
             from llama_cpp import Llama
-            # 嘗試使用 CUDA 載入
-            # 注意: 這裡我們移除 Emoji ✅ 以防止 Windows CP950 編碼報錯
+            
             self.llm = Llama(
-                model_path=MODEL_PATH,
-                n_gpu_layers=-1, # 將所有層卸載至 GPU
-                n_ctx=8192,      # 合理的上下文長度
-                verbose=False    # 減少 llama.cpp 的原始輸出以保持介面乾淨
+                model_path=target_path,
+                n_gpu_layers=-1, 
+                n_ctx=8192,      
+                verbose=True    # 改為 True 以便我們在 Debug 時看到更多資訊
             )
             self.has_gpu = True
-            console.print(Panel("[success]已使用 llama-cpp-python 成功載入模型 (CUDA 加速已啟用)[/success]", border_style="green"))
+            console.print(Panel("[success]模型載入成功[/success]", border_style="green"))
             
         except ImportError as e:
             console.print(Panel(f"[danger]尚未安裝 llama-cpp-python 或載入失敗。[/danger]\n詳細錯誤: {e}", title="載入錯誤", border_style="red"))
@@ -106,7 +112,7 @@ class ModelEngine:
             response = self.llm.create_chat_completion(
                 messages=messages,
                 max_tokens=1024,
-                stop=["<|eot_id|>", "<|end_of_text|>"],
+                stop=["<|eot_id|>", "<|end_of_text|>", "<end_of_turn>", "<start_of_turn>"],
                 temperature=0.7
             )
             
@@ -115,9 +121,22 @@ class ModelEngine:
             console.print(f"AI   > {ans_display}...", style="dim green")
             return ans
         except Exception as e:
-            # 極其保守的錯誤輸出
             try:
                 console.print(f"Error during generation: {str(e)}", style="bold red")
             except:
                 print(f"Error during generation (plain): {str(e)}")
             return f"生成過程中發生錯誤: {str(e)}"
+
+    def switch_model(self, model_id : str):
+        if self.llm:
+            del self.llm
+            self.llm = None
+            import gc; gc.collect()
+            console.print("[success]先前模型已成功卸載並釋放顯存[/success]")
+
+        self.current_use_model_path = models_path.get(model_id)
+        if not self.current_use_model_path:
+            console.print(f"[danger]錯誤: 找不到模型 ID {model_id} 對應的路徑[/danger]")
+            return
+
+        self.load_model(self.current_use_model_path)

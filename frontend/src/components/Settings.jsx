@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import progressIcon from '../assets/icons/I351009progress_activity_24dp.png';
+import '../styles/Settings.css';
 
-function Settings({ config, onUpdateConfig, onBack, onPlayClick, onOpenMonitor, t }) {
+function Settings({ config, onUpdateConfig, onBack, onPlayClick, onOpenMonitor, selectedModel, isModelLoading, onModelChange, t }) {
     const handleThemeChange = (theme) => {
         onPlayClick();
         onUpdateConfig({ ...config, theme });
@@ -13,6 +14,19 @@ function Settings({ config, onUpdateConfig, onBack, onPlayClick, onOpenMonitor, 
     const handleLanguageChange = (lang) => {
         onPlayClick();
         onUpdateConfig({ ...config, language: lang });
+    };
+
+    const handleResetDefaults = () => {
+        onPlayClick(true);
+        if (window.confirm(t.confirmReset || "確定要恢復預設值嗎？")) {
+            onUpdateConfig({
+                theme: 'dark',
+                temperature: 0.7,
+                maxTokens: 512,
+                soundEnabled: true,
+                language: 'zh',
+            });
+        }
     };
 
     return (
@@ -77,24 +91,69 @@ function Settings({ config, onUpdateConfig, onBack, onPlayClick, onOpenMonitor, 
                 </section>
 
                 <section className="settings-section">
-                    <h3>{t.modelParams}</h3>
+                    <h3>{t.modelSettings}</h3>
                     <div className="setting-item">
-                        <label htmlFor="temperature">{t.temperature}: {config.temperature}</label>
+                        <label>Gemma3 Series</label>
+                        <div className="Model">
+                            <input
+                                type="radio"
+                                name='modelChange'
+                                checked={selectedModel === 'Gemma3_4b_it_Q4_K_M'}
+                                onChange={() => onModelChange("Gemma3_4b_it_Q4_K_M")}
+                                disabled={isModelLoading}
+                            />
+                            <span>Gemma3_4B_Q4_K_M</span>
+                            {isModelLoading && selectedModel === "Gemma3_4b_it_Q4_K_M" && (
+                                <div className="NotificationDiv">
+                                    <span className='Notification'>Model is loading...</span>
+                                    <img src={progressIcon} alt="loading" className="model-loader" />
+                                </div>
+                            )}
+                        </div>
+                        <label>Llama3.2 Series</label>
+                        <div className="Model">
+                            <input
+                                type="radio"
+                                name='modelChange'
+                                checked={selectedModel === 'Llama_3.2_1B_It_Q8_0'}
+                                onChange={() => onModelChange("Llama_3.2_1B_It_Q8_0")}
+                                disabled={isModelLoading}
+                            />
+                            <span>Llama3.2_1B_It_Q8_0</span>
+                            {isModelLoading && selectedModel === "Llama_3.2_1B_It_Q8_0" && (
+                                <div className="NotificationDiv">
+                                    <span className='Notification'>Model is loading...</span>
+                                    <img src={progressIcon} alt="loading" className="model-loader" />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    <div className="setting-item">
+                        <label>Temperature: {config.temperature}</label>
                         <input
-                            id="temperature"
-                            type="range" min="0.1" max="2.0" step="0.1"
+                            type="range"
+                            min="0.1"
+                            max="2.0"
+                            step="0.1"
                             value={config.temperature}
-                            onChange={(e) => handleParamChange('temperature', e.target.value)}
+                            onChange={(e) => onUpdateConfig({ ...config, temperature: parseFloat(e.target.value) })}
                         />
                     </div>
                     <div className="setting-item">
-                        <label htmlFor="maxTokens">{t.maxTokens}: {config.maxTokens}</label>
+                        <label>Max Tokens: {config.maxTokens}</label>
                         <input
-                            id="maxTokens"
-                            type="range" min="64" max="2048" step="64"
+                            type="range"
+                            min="64"
+                            max="4096"
+                            step="64"
                             value={config.maxTokens}
-                            onChange={(e) => handleParamChange('maxTokens', e.target.value)}
+                            onChange={(e) => onUpdateConfig({ ...config, maxTokens: parseInt(e.target.value) })}
                         />
+                    </div>
+                    <div className="setting-item no-border">
+                        <button className="reset-prev-btn" onClick={handleResetDefaults}>
+                            {t.resetDefaults}
+                        </button>
                     </div>
                 </section>
 
@@ -103,7 +162,7 @@ function Settings({ config, onUpdateConfig, onBack, onPlayClick, onOpenMonitor, 
                     <div className="setting-item">
                         <label>{t.backendMonitor}</label>
                         <button className="monitor-btn" onClick={() => onOpenMonitor()}>
-                            🚀 {t.openMonitor}
+                            {t.openMonitor}
                         </button>
                     </div>
                 </section>

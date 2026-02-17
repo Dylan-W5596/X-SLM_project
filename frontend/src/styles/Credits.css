@@ -1,0 +1,208 @@
+.credits-page {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 5000;
+    background: #020617;
+    color: white;
+    overflow: hidden;
+    /* 還原為不允許滑動 */
+    font-family: var(--font-family);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    /* 還原居中 */
+    animation: creditsPageFadeIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.credits-dither-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    opacity: 0.7;
+    pointer-events: none;
+    /* 確保滑鼠事件能穿透到容器以進行全局追蹤 */
+}
+
+/* 內容區塊 */
+.credits-container {
+    z-index: 2;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* 移除原本的寬度限制，由 JS 統一控制 */
+    transition: transform 0.2s ease-out; /* 增加過渡效果使縮放更平滑 */
+}
+
+.credits-header {
+    text-align: center;
+    margin-bottom: 4rem;
+    animation: fadeInUp 0.8s ease-out 0.2s both;
+}
+
+.credits-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #fff 0%, var(--primary-color) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.credits-line {
+    width: 80px;
+    height: 4px;
+    background: var(--primary-color);
+    margin: 0 auto;
+    border-radius: 2px;
+}
+
+.credits-content-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    width: 100%;
+    margin-bottom: 4rem;
+}
+
+.credits-card {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 2.5rem;
+    border-radius: 24px;
+    backdrop-filter: blur(20px);
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    animation: cardEntrance 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.credits-card:nth-child(1) {
+    animation-delay: 0.4s;
+}
+
+.credits-card:nth-child(2) {
+    animation-delay: 0.5s;
+}
+
+.credits-card:nth-child(3) {
+    animation-delay: 0.6s;
+}
+
+.credits-card:nth-child(4) {
+    animation-delay: 0.7s;
+}
+
+.credits-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    border-color: rgba(59, 130, 246, 0.3);
+    background: rgba(15, 23, 42, 0.8);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.card-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.credits-card h3 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    letter-spacing: 1px;
+}
+
+.credits-card p {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+.credits-footer {
+    text-align: center;
+    opacity: 0.5;
+    animation: fadeIn 1s ease-out 1s both;
+    margin-top: auto;
+    /* 推到底部 */
+}
+
+.credits-footer p {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
+}
+
+.version-text {
+    font-size: 0.7rem !important;
+    opacity: 0.7;
+}
+
+@keyframes creditsPageFadeIn {
+    from {
+        opacity: 0;
+        filter: blur(20px);
+        transform: scale(1.1);
+    }
+
+    to {
+        opacity: 1;
+        filter: blur(0);
+        transform: scale(1);
+    }
+}
+
+@keyframes cardEntrance {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 0.5;
+    }
+}
+
+@media (max-width: 768px) {
+    .credits-content-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .credits-title {
+        font-size: 2.5rem;
+    }
+
+    .credits-container {
+        padding-top: 5rem;
+    }
+}

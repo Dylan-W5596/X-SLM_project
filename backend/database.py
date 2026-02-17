@@ -29,8 +29,8 @@ class ChatSession(Base):
     __table_args__ = {'sqlite_autoincrement': True}
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, default="New Chat")
-    created_at = Column(DateTime, default=datetime.utcnow)
-    group_id = Column(Integer, ForeignKey("groups.id", ondelete="CASCADE"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)     # ondelete="CASCADE"表示如果 group 被刪除，則所有相關的 session 也會被刪除
+    group_id = Column(Integer, ForeignKey("groups.id", ondelete="CASCADE"), nullable=True) # nuallable=True表示群組可以為空
     order = Column(Integer, default=0)
     
     group = relationship("Group", back_populates="sessions")

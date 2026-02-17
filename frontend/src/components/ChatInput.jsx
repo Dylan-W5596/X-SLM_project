@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
 import sendIcon from '../assets/icons/I351005_send_24dp.png';
 import stopIcon from '../assets/icons/I351007_stop_24dp.png';
+import '../styles/ChatInput.css';
 
 function ChatInput({ input, setInput, replyingTo, onCancelReply, onSendMessage, onStopGeneration, isLoading, t }) {
 

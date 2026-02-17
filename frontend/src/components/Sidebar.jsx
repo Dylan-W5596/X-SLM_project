@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import folderIcon from '../assets/icons/I351001_create_new_folder_24dp.png';
 import settingsIcon from '../assets/icons/I351006_settings_24dp.png';
+import homeIcon from '../assets/icons/I351008home_24dp.png';
+import '../styles/Sidebar.css';
 
 function Sidebar({
     groups,
@@ -16,6 +18,7 @@ function Sidebar({
     onDeleteGroup,
     onMoveSession,
     onOpenSettings,
+    onGoHome,
     activeView,
     onPlayClick,
     t
@@ -171,6 +174,12 @@ function Sidebar({
             </div>
 
             <div className="sidebar-footer">
+                <button
+                    className={`home-entry-btn ${activeView === 'home' ? 'active' : ''}`}
+                    onClick={onGoHome}
+                >
+                    <img src={homeIcon} alt="Home" className="home-icon-img" /> {t.goHome}
+                </button>
                 <button
                     className={`settings-entry-btn ${activeView === 'settings' ? 'active' : ''}`}
                     onClick={onOpenSettings}
