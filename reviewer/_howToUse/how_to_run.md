@@ -16,11 +16,12 @@
     pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu124
     ```
 
-2.  **下載模型** (已自動完成):
-    確保 `models/Llama-3.2-1B-Instruct-Q8_0.gguf` 存在。若不存在，請執行：
+2.  **下載模型** (已自動完成部分):
+    確保 `models/` 資料夾內有模型檔案。若不存在，請執行：
     ```bash
     .\venv\Scripts\python download_model.py
     ```
+    *   你可以選擇下載 **Llama-3.2-1B** (輕量) 或 **Gemma3-4B** (最新強大)。
 
 3.  **前端設定**:
     ```bash
@@ -28,7 +29,7 @@
     npm install
     ```
 
-## 啟動應用程式 (開發模式)
+## 啟動應用程式 (Dev模式)
 在 `frontend` 資料夾中執行：
 ```bash
 npm run electron:dev

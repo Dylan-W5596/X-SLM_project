@@ -43,3 +43,13 @@
 - **X**
 #### Fixed
 - **整體系統優化**
+
+## [ 2026/02/18 ]
+### version Alpha 0.1.0
+
+#### Added
+- **全新模型Gemma3_4B** : 有更好的模型。
+#### Changed
+- **Setting內新增模型切化系統**
+#### Fixed
+- **fix some bugs**
