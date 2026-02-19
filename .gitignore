@@ -84,9 +84,3 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
-
-# Reviewer Documents & Internal Logs
-reviewer/_file_feature_review/
-reviewer/_error_log/
-reviewer/frontend_src_deep_dive.md
-reviewer/Tutorial/

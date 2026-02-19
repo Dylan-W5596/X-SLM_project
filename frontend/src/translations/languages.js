@@ -38,9 +38,9 @@ export const languages = {
         credits: "開發鳴謝",
         creditsTitle: "技術鳴謝與致敬",
         creditsTech: "本專案基於 Electron 與 React 打造，後端由 FastAPI 驅動，並透過 CUDA 加速模型推論。",
-        creditsModel: "此應用使用了 Meta Llama 團隊提供的 Llama 3.2 輕量化模型，讓本地端 AI 成為可能。",
+        creditsModel: "此應用使用了 Meta Llama 團隊提供的 Llama 3.2 與 Google DeepMind 團隊提供的 Gemma 3輕量模型，讓本地端 AI 成為可能。",
         creditsArt: "背景動畫採用了現代 Shader 技術，加上 ReactBit.dev 上的資源。",
-        creditsSpecial: "感謝所有參與測試與提供建議的夥伴。您的反饋讓 LLM-X 持續進化。"
+        creditsSpecial: "感謝所有參與測試與提供建議的夥伴。大家的反饋讓 X-SLM 持續進化。"
     },
     en: {
         settings: "System Settings",
@@ -81,8 +81,8 @@ export const languages = {
         credits: "Credits",
         creditsTitle: "Technical Acknowledgments",
         creditsTech: "Built with Electron and React, powered by FastAPI backend with CUDA acceleration.",
-        creditsModel: "This application uses Meta Llama team for the Llama 3.2 lightweight models.",
+        creditsModel: "This application uses Meta Llama team for the Llama 3.2 and Google DeepMind team for the Gemma 3 lightweight models.",
         creditsArt: "Background animations utilize modern Shader techniques, and devloped source from ReactBit.dev.",
-        creditsSpecial: "Special thanks to all testers and contributors. Your feedback drives LLM-X forward."
+        creditsSpecial: "Special thanks to all testers and contributors. Everyone's feedback drives X-SLM forward."
     }
 };

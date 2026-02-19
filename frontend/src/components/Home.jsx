@@ -32,7 +32,7 @@ function Home({ onNavigate, t }) {
 
             <div className="home-content">
                 <div className="logo-container">
-                    <h1 className="main-title">LLM<span>-X</span></h1>
+                    <h1 className="main-title">X-<span>SLM</span></h1>
                     <p className="subtitle">Future Intelligence Platform</p>
                 </div>
 
